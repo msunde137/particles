@@ -2,8 +2,7 @@
 
 layout (location = 0) in vec3 vPos;
 
-uniform vec3 uCameraPos;
-uniform float uSize;
+uniform mat4 uTransform;
 uniform vec3 uOffset;
 uniform vec4 uColor;
 uniform mat4 uVP;
@@ -15,5 +14,5 @@ void main()
 {
    color = uColor;
    uv = vPos.xy;
-   gl_Position = vec4(vPos, 1.0); 
+   gl_Position = uVP * uTransform * vec4(vPos, 1.0); 
 }

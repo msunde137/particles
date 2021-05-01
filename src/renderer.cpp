@@ -30,15 +30,8 @@ Renderer::~Renderer()
 {
 }
 
-bool Renderer::initialized() const
+void Renderer::draw()
 {
-   return mInitialized;
-}
-
-
-vec3 Renderer::cameraPosition() const
-{
-   return mLookfrom;
 }
 
 void Renderer::init(const std::string& vertex, const std::string& fragment)
@@ -97,10 +90,12 @@ void Renderer::ortho(float minx, float maxx, float miny, float maxy, float minz,
    mProjectionMatrix = glm::ortho(minx, maxx, miny, maxy, minz, maxz);
 }
 
-void Renderer::lookAt(const vec3& lookfrom, const vec3& lookat)
+void Renderer::lookTo(const vec3& eye, const vec3& forward, const vec3& up)
 {
-   mLookfrom = lookfrom;
-   mViewMatrix = glm::lookAt(lookfrom, lookat, vec3(0,1,0));
+   mLookFrom = eye;
+   mLookTo = glm::normalize(forward);
+   mUp = up;
+   mViewMatrix = glm::lookAt(eye, eye + forward, up);
 }
 
 void Renderer::begin(GLuint texIf, BlendMode mode)
@@ -110,9 +105,9 @@ void Renderer::begin(GLuint texIf, BlendMode mode)
    glUseProgram(mShaderId);
    blendMode(mode);
 
-   mat4 mvp = mProjectionMatrix * mViewMatrix;
-   glUniformMatrix4fv(glGetUniformLocation(mShaderId, "uVP"), 1, GL_FALSE, &mvp[0][0]);
-   glUniform3f(glGetUniformLocation(mShaderId, "uCameraPos"), mLookfrom[0], mLookfrom[1], mLookfrom[2]);
+   mat4 vp = mProjectionMatrix * mViewMatrix;
+   glUniformMatrix4fv(glGetUniformLocation(mShaderId, "uVP"), 1, GL_FALSE, &vp[0][0]);
+   glUniform3f(glGetUniformLocation(mShaderId, "uCameraPos"), mLookFrom[0], mLookFrom[1], mLookFrom[2]);
 
    GLuint locId = glGetUniformLocation(mShaderId, "image");
    glUniform1i(locId, 0);
@@ -121,20 +116,40 @@ void Renderer::begin(GLuint texIf, BlendMode mode)
    glEnableVertexAttribArray(0); // 0 -> Sending VertexPositions to array #0 in the active shader
 }
 
-void Renderer::quad(const glm::vec3& pos, const glm::vec4& color, float size)
+void Renderer::quad(const glm::mat4& transf, const glm::vec4& color)
 {
-   assert(mInitialized);
-   glUniform3f(glGetUniformLocation(mShaderId, "uOffset"), pos[0], pos[1], pos[2]);
-   glUniform4f(glGetUniformLocation(mShaderId, "uColor"), color[0], color[1], color[2], color[3]);
-   glUniform1f(glGetUniformLocation(mShaderId, "uSize"), size);
-
-   glDrawArrays(GL_TRIANGLES, 0, 6); 
+    assert(mInitialized);
+    glm::mat4 localTransf = transf * glm::translate(mat4(1), vec3(-.5, -.5, 0));
+    float dist = glm::dot(vec3(localTransf[3]) - mLookFrom, mLookTo);
+    for (int i = 0; i < mQuads.size(); i++)
+    {
+        float dist1 = glm::dot(vec3(mQuads[i].transform[3]) - mLookFrom, mLookTo);
+        if (dist <= dist1)
+        {
+            mQuads.insert(mQuads.begin() + i, { localTransf, color });
+            return;
+        }
+    }
+    mQuads.push_back({ localTransf, color });
+    //mat4 localTransf = transf * glm::translate(mat4(1), vec3(-.5, -.5, 0));
+    //glUniformMatrix4fv(glGetUniformLocation(mShaderId, "uTransform"), 1, GL_FALSE, &localTransf[0][0]);
+    //glUniform4f(glGetUniformLocation(mShaderId, "uColor"), color[0], color[1], color[2], color[3]);
+    //glDrawArrays(GL_TRIANGLES, 0, 6); 
 }
 
 void Renderer::end()
 {
    assert(mInitialized);
+   for (int i = mQuads.size()-1; i >= 0; i--)
+   {
+       Quad& q = mQuads[i];
+       glUniformMatrix4fv(glGetUniformLocation(mShaderId, "uTransform"), 1, GL_FALSE, &q.transform[0][0]);
+       glUniform4fv(glGetUniformLocation(mShaderId, "uColor"), 1, &q.color[0]);
+       glDrawArrays(GL_TRIANGLES, 0, 6);
+   }
+   mQuads.clear();
    glUseProgram(0);
+   glBindVertexArray(0);
 }
 
 

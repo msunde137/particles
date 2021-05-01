@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include "AGLM.h"
 
 std::ostream& operator<<(std::ostream& o, const glm::mat4& m)
 {
@@ -52,3 +53,17 @@ std::ostream& operator<<(std::ostream& o, const glm::vec2& v)
    return o;
 }
 
+static std::random_device rd;
+static std::mt19937 generator(rd());
+float random_float()
+{
+    std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+    return distribution(generator);
+}
+
+float random_float(float min, float max)
+{
+    assert(min < max);
+    std::uniform_real_distribution<float> distribution(min, max);
+    return distribution(generator);
+}

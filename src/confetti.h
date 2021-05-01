@@ -5,10 +5,10 @@
 
 namespace agl {
 
-   class Confetti : public ParticleSystem {
-   public:
-      virtual void createParticles(int size) override;
-      virtual void update(float dt) override;
-   };
+    class Confetti : public ParticleSystem {
+    public:
+        virtual void createParticles(int size) override;
+        virtual void update(float dt) override;
+    };
 }
 #endif

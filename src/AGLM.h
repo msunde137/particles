@@ -17,6 +17,10 @@ extern std::ostream& operator<<(std::ostream& o, const glm::mat3& m);
 extern std::ostream& operator<<(std::ostream& o, const glm::vec3& v);
 extern std::ostream& operator<<(std::ostream& o, const glm::vec4& v);
 extern std::ostream& operator<<(std::ostream& o, const glm::vec2& v);
+inline bool operator<(const glm::vec3& a, const glm::vec3& b) { return a.x < b.x || a.y < b.y || a.z < b.z; }
+inline bool operator>=(const glm::vec3& a, const glm::vec3& b) { return !(a < b); }
+inline bool operator>(const glm::vec3& a, const glm::vec3& b) { return a.x > b.x || a.y > b.y || a.z > b.z; }
+inline bool operator<=(const glm::vec3& a, const glm::vec3& b) { return !(a > b); }
 
 namespace glm
 {
@@ -26,27 +30,48 @@ namespace glm
 const float pi = glm::pi<float>();
 const float infinity = std::numeric_limits<float>::infinity();
 
-inline float random_float() 
+float random_float();
+
+float random_float(float min, float max);
+
+inline glm::vec3 random_vec3()
 {
-   static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-   static std::mt19937 generator;
-   return distribution(generator); 
+    float x = random_float();
+    float y = random_float();
+    float z = random_float();
+    return glm::vec3(x, y, z);
 }
 
-inline float random_float(float min, float max) 
+inline glm::vec3 random_vec3(const glm::vec3& min, const glm::vec3& max)
 {
-   static std::uniform_real_distribution<float> distribution(min, max);
-   static std::mt19937 generator;
-   return distribution(generator);
+    float x = random_float(min.x, max.x);
+    float y = random_float(min.y, max.y);
+    float z = random_float(min.z, max.z);
+    return glm::vec3(x, y, z);
 }
 
-inline glm::vec3 random_unit_cube() 
+inline glm::vec4 random_vec4()
 {
-   float x = random_float(-0.5,0.5);
-   float y = random_float(-0.5,0.5);
-   float z = random_float(-0.5,0.5);
-   return glm::vec3(x, y, z);
+    return glm::vec4(random_vec3(), random_float());
 }
+
+inline glm::vec4 random_vec3(const glm::vec4& min, const glm::vec4& max)
+{
+    return glm::vec4(random_vec3((glm::vec3)min, (glm::vec3)max), random_float(min.w, max.w));
+}
+
+inline glm::vec3 random_unit_cube()
+{
+    return random_vec3(glm::vec3(-.5, -.5, -.5), glm::vec3(.5, .5, .5));
+}
+
+//inline glm::vec3 random_unit_cube() 
+//{
+//   float x = random_float(-0.5,0.5);
+//   float y = random_float(-0.5,0.5);
+//   float z = random_float(-0.5,0.5);
+//   return glm::vec3(x, y, z);
+//}
 
 inline glm::vec3 random_unit_square() 
 {
@@ -58,12 +83,18 @@ inline glm::vec3 random_unit_square()
 
 inline glm::vec3 random_unit_sphere() 
 {
-   glm::vec3 p = random_unit_cube();
-   while (glm::length(p) >= 1.0f) 
-   {
-      p = random_unit_cube();
-   } 
-   return p;
+    glm::mat4 quat = glm::rotate(glm::mat4(1), random_float(0, 2.0f * 3.142f), glm::vec3(1, 0, 0));
+    quat = glm::rotate(quat, random_float(0, 2.0f * 3.142f), glm::vec3(0, 1, 0));
+    quat = glm::rotate(quat, random_float(0, 2.0f * 3.142f), glm::vec3(0, 0, 1));
+    return glm::vec3(quat * glm::vec4(0, 1, 0, 1));
+}
+
+inline glm::vec3 random_unit_ball() 
+{
+    glm::mat4 quat = glm::rotate(glm::mat4(1), random_float(0, 2.0f * 3.142f), glm::vec3(1, 0, 0));
+    quat = glm::rotate(quat, random_float(0, 2.0f * 3.142f), glm::vec3(0, 1, 0));
+    quat = glm::rotate(quat, random_float(0, 2.0f * 3.142f), glm::vec3(0, 0, 1));
+    return glm::vec3(quat * glm::vec4(1, 0, 0, 1)) * random_float(0.0f,1.0f);
 }
 
 inline glm::vec3 random_unit_disk()
@@ -105,5 +136,19 @@ inline bool near_zero(const glm::vec3& e)
    // Return true if the vector is close to zero in all dimensions.
    const auto s = 1e-8;
    return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
+}
+
+inline bool near_zero(const glm::vec4& e) 
+{
+   // Return true if the vector is close to zero in all dimensions.
+   const auto s = 1e-8;
+   return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s) && (fabs(e[3]) < s);
+}
+
+inline bool near_zero(const float& e) 
+{
+   // Return true if the vector is close to zero in all dimensions.
+   const auto s = 1e-8;
+   return fabs(e) < s;
 }
 

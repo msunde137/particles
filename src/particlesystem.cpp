@@ -5,38 +5,35 @@ using namespace glm;
 using namespace std;
 using namespace agl;
 
-Renderer ParticleSystem::theRenderer;
-
-Renderer& ParticleSystem::GetRenderer()
-{
-   return theRenderer;
-}
-
 ParticleSystem::ParticleSystem()
 {
-   mBlendMode = ADD;
-   mTexture = -1;
+    mBlendMode = ADD;
+    mTexture = -1;
 }
 
 ParticleSystem::~ParticleSystem()
 {
 }
 
-void ParticleSystem::init(int size)
+void ParticleSystem::init(std::shared_ptr<Renderer> renderer, int size)
 {
-   if (!theRenderer.initialized())
-   {
-      theRenderer.init("../shaders/billboard.vs", "../shaders/billboard.fs");
-   }
-   createParticles(size);
+    mRenderer = renderer;
+    mTexture = mRenderer->loadTexture("../textures/particle.png");
+    createParticles(size);
 }
 
-void ParticleSystem::draw() 
+void ParticleSystem::draw()
 {
-   theRenderer.begin(mTexture, mBlendMode);
-   for (int i = 0; i < mParticles.size(); i++)
-   {
-      Particle particle = mParticles[i];
-      theRenderer.quad(particle.pos, particle.color, particle.size);
-   }
+    //calculate camera frame
+    vec4 fa = vec4(glm::cross(mRenderer->viewDirection(), mRenderer->viewUp()), 0);
+    vec4 fb = vec4(mRenderer->viewUp(), 0);
+    vec4 fc = vec4(-mRenderer->viewDirection(), 0);
+    mat4 frame(fa, fb, fc, vec4(0, 0, 0, 1));
+    mRenderer->begin(mTexture, mBlendMode);
+    for (int i = 0; i < mParticles.size(); i++)
+    {
+        Particle particle = mParticles[i];
+        mRenderer->quad(particle.transform * frame, particle.color);
+    }
+    mRenderer->end();
 }
