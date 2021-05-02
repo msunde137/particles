@@ -47,4 +47,8 @@ particles/build $ ../bin/demo
 
 ## Results
 
-TODO: Show your work
+Implemented a confeti particle system with gravity.
+I<img width="376" alt="Particles1" src="https://user-images.githubusercontent.com/54864515/116822128-0b92d080-ab4b-11eb-943f-ff8a53331fd1.PNG">
+
+Implemented a fireworks particle system with drag and gravity.
+<img width="387" alt="Particles2" src="https://user-images.githubusercontent.com/54864515/116822129-0b92d080-ab4b-11eb-9b32-bc1dbea45dda.PNG">
